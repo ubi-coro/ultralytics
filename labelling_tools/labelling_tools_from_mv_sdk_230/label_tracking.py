@@ -1,19 +1,19 @@
-# Copyright (c) Prophesee S.A.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
-# on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and limitations under the License.
+"""Copyright (c) Prophesee S.A.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and limitations under the License."""
 
 import sys
 import os
 import datetime
 import glob
-from labelling_bbox import *
-import label
 import argparse
+from labelling_bbox import cv2, np, FrameLabellingBBoxes, LabellingBBoxDrawingState, labelling_mouse_cb
+import label
 from bbox_txt2npy import bboxstr2array
 
 # versioning info
@@ -24,12 +24,14 @@ __ARCHINFO__ = 'x86_64'
 
 
 def read_image(frame_index):
+    """read image"""
     global image_dir
     frame = cv2.imread(image_dir[frame_index])
     return frame is not None, frame
 
 
 def read_video_frame(frame_index):
+    """read video frame"""
     global video
     video.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
     ok, frame = video.read()
@@ -37,15 +39,17 @@ def read_video_frame(frame_index):
 
 
 def read_frame(frame_index):
+    """read frame"""
     if video:
         return read_video_frame(frame_index)
     elif image_dir:
         return read_image(frame_index)
     else:
-        raise ValueError("nothing to read in the frame:{}".format(frame_index))
+        raise ValueError(f"nothing to read in the frame:{frame_index}")
 
 
 def usage(args):
+    """print usage"""
     print("\n")
     print("--- Image Legend ---")
     print("\n")
@@ -88,20 +92,15 @@ def usage(args):
     print("--- Change ID mode ---")
     print("\n")
     print("- When a bbox is selected, pressing a number key puts you in the change id mode.")
-    print(
-        "- As soon as a number is pressed while the bbox is selected, you may change the object or class id of a bbox.")
+    print("- As soon as a number is pressed while the bbox is selected, you may change the object or class id of a bbox.")
     print("- A small window opens up with the first number you type")
     print("- As long as you keep pressing numbers, it will write them on this window.")
     print("- It represents the id that will replace the current one of the bbox")
-    print("- Pressing the C key changes the id you will update: when you enter the mode, it is set to change the "
-          "object_id.")
+    print("- Pressing the C key changes the id you will update: when you enter the mode, it is set to change the object_id.")
     print("- Pressing the C key will switch between changing the class_id and the object_id")
-    print(
-        "- Changing the class id of a bbox will affect every bbox that has the same class id, in the future or in the past")
-    print(
-        "- Changing the object id of a bbox will affect every time contiguous bbox that has the same object id, in the future or in the past")
-    print(
-        "- You can't give a bbox the same object id as a bbox existing in the current frame. The script will prevent it.")
+    print("- Changing the class id of a bbox will affect every bbox that has the same class id, in the future or in the past")
+    print("- Changing the object id of a bbox will affect every time contiguous bbox that has the same object id, in the future or in the past")
+    print("- You can't give a bbox the same object id as a bbox existing in the current frame. The script will prevent it.")
     print("- Pressing the Esc key cancel the id modification")
     print("- Pressing the Backspace key erase the last number entered")
     print("- Pressing the Enter key validates the id modification")
@@ -120,16 +119,13 @@ def usage(args):
 
 
 def parse_args(argv=None):
+    """parse arguments"""
     parser = argparse.ArgumentParser(description='Label Tracking script',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-v',
                         '--version',
                         action='version',
-                        version="PROPHESEE Label tracking tool - version {} - created on {} {} - {}".format(
-                            __COMMITID__,
-                            __OSINFO__,
-                            __ARCHINFO__,
-                            __DATE__))
+                        version=f"PROPHESEE Label tracking tool - version {__COMMITID__} - created on {__OSINFO__} {__ARCHINFO__} - {__DATE__}")
     parser.add_argument("-i", "--input", required=True, help="Input video file or first image path of a directory.")
     parser.add_argument("-l", "--label_file", default="", help="Existing labeling file")
     parser.add_argument(
@@ -152,6 +148,7 @@ def parse_args(argv=None):
 
 
 def main(args):
+    """main function"""
 
     image_dir = None
     global video
@@ -166,7 +163,7 @@ def main(args):
         video_file = args.input
     elif input_data[1].lower() == ".jpg":
         image_dir = sorted(glob.glob(os.path.dirname(args.input) + "/*jpg"))
-        assert len(image_dir) > 0, "Could not initialize from image directory at: {}".format(args.input)
+        assert len(image_dir) > 0, f"Could not initialize from image directory at: {args.input}"
         for img in image_dir:
             print(img)
 
@@ -186,7 +183,7 @@ def main(args):
         video = cv2.VideoCapture(video_file)
 
         # Exit if video not opened.
-        assert video.isOpened(), "Error: Could not open video: {}".format(video_file)
+        assert video.isOpened(), f"Error: Could not open video: {video_file}"
 
         number_of_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -199,9 +196,9 @@ def main(args):
         frame_height = img.shape[0]
 
     timestep_us = int(1000000 / args.fps)
-    assert timestep_us >0, "Computed frame timestep (us) is :{}, which is not a correct timestep_us. " \
+    assert timestep_us >0, f"Computed frame timestep (us) is :{timestep_us}, which is not a correct timestep_us. " \
                            "Please set a correct frame rate manually with -f option." \
-                           "Note: frame time interval is computed as: 1000000/fps".format(timestep_us)
+                           "Note: frame time interval is computed as: 1000000/fps"
 
     frame_index = args.frame_index - 1
     prev_index = frame_index - 1
@@ -235,7 +232,7 @@ def main(args):
     frame_labelling_bboxes.tracker_name = "KCF"
 
     if args.label_file != "":
-        assert os.path.exists(args.label_file), "Could not open input label file: {}. ".format(args.label_file)
+        assert os.path.exists(args.label_file), f"Could not open input label file: {args.label_file}. "
 
         # reading labeling file
         bboxes_container = label.read_bboxes(args.label_file, [], timestep_us)
@@ -288,27 +285,27 @@ def main(args):
         frame_labelling_bboxes.update_labelling_frame(frame)
         # key bindings
 
-        retCode = cv2.waitKeyEx(autoplay_speed)
-        key = retCode & 0xFF
+        ret_code = cv2.waitKeyEx(autoplay_speed)
+        key = ret_code & 0xFF
 
         # BBOXES key bindings
-        if retCode & 0xFFFF == 0xFF51:  # left
-            if not retCode & 0x040000:
+        if ret_code & 0xFFFF == 0xFF51:  # left
+            if not ret_code & 0x040000:
                 frame_labelling_bboxes.left_arrow_pressed()
             else:
                 frame_labelling_bboxes.left_arrow_pressed(True)
-        elif retCode & 0xFFFF == 0xFF52:  # up
-            if not retCode & 0x040000:
+        elif ret_code & 0xFFFF == 0xFF52:  # up
+            if not ret_code & 0x040000:
                 frame_labelling_bboxes.up_arrow_pressed()
             else:
                 frame_labelling_bboxes.up_arrow_pressed(True)
-        elif retCode & 0xFFFF == 0xFF53:  # right
-            if not retCode & 0x040000:
+        elif ret_code & 0xFFFF == 0xFF53:  # right
+            if not ret_code & 0x040000:
                 frame_labelling_bboxes.right_arrow_pressed()
             else:
                 frame_labelling_bboxes.right_arrow_pressed(True)
-        elif retCode & 0xFFFF == 0xFF54:  # down
-            if not retCode & 0x040000:
+        elif ret_code & 0xFFFF == 0xFF54:  # down
+            if not ret_code & 0x040000:
                 frame_labelling_bboxes.down_arrow_pressed()
             else:
                 frame_labelling_bboxes.down_arrow_pressed(True)
@@ -316,7 +313,7 @@ def main(args):
             frame_labelling_bboxes.delete_selected()
 
         elif key == 9:  # tab key*
-            if retCode == 0x140009:
+            if ret_code == 0x140009:
                 frame_labelling_bboxes.change_selected(True)
             else:
                 frame_labelling_bboxes.change_selected()
@@ -373,7 +370,7 @@ def main(args):
             frame_index -= frame_index > 0
             frame_labelling_bboxes.set_bbox_list_from_bboxes_container(bboxes_container,
                                                                        (frame_index + 1) * timestep_us)
-            print('frame {:d} out of {:d}'.format(frame_index + 1, number_of_frames))
+            print(f'frame {frame_index + 1} out of {number_of_frames}')
 
         elif key == ord('R') or key == ord('r') or frame_labelling_bboxes.autoplay:
             if (key == ord('R') or key == ord('r')) and frame_labelling_bboxes.autoplay:
@@ -381,15 +378,15 @@ def main(args):
             frame_labelling_bboxes.save_current_bboxes(bboxes_container, (frame_index + 1) * timestep_us)
             frame_index += frame_index < number_of_frames - 1
             frame_labelling_bboxes.update_bboxes_from_frame(bboxes_container, (frame_index + 1) * timestep_us)
-            print('frame {:d} out of {:d}'.format(frame_index + 1, number_of_frames))
+            print(f'frame {frame_index + 1} out of {number_of_frames}')
 
         # Display result
         frame_labelling_bboxes.draw_bboxes_on_frame()
         cv2.imshow(window_title, frame_labelling_bboxes.drawing_frame)
 
         if save_image:
-            print('Saving image image{:d}.png'.format(frame_index))
-            cv2.imwrite('image{:d}.png'.format(frame_index), frame)
+            print(f'Saving image image{frame_index}.png')
+            cv2.imwrite(f'image{frame_index}.png', frame)
             save_image = False
 
     frame_labelling_bboxes.save_current_bboxes(bboxes_container, (frame_index + 1) * timestep_us)
@@ -398,7 +395,7 @@ def main(args):
     print("output label file in txt: " + args.output_file)
 
     # convert to NPY
-    print('converting to NPY format: {}_bbox.npy'.format(args.output_file[:-4]))
+    print(f'converting to NPY format: {args.output_file[:-4]}_bbox.npy')
     lines = open(args.output_file, "r").readlines()
     bboxes_array = bboxstr2array(lines)
     np.save(args.output_file[:-4] + "_bbox.npy", bboxes_array)

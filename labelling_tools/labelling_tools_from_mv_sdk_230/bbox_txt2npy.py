@@ -7,10 +7,10 @@
 Tool to convert BBOX text format (BB_CREATE, ...) into EventBbox numpy arrays
 """
 
-import numpy as np
 import argparse
 import os
 import sys
+import numpy as np
 
 
 from metavision_sdk_core import EventBbox
@@ -30,14 +30,14 @@ def bboxstr2array(lines):
         if line == "":
             continue
         line_list = line.split()
-        assert len(line_list) >= 2, "Invalid file:\n{}".format(line)
+        assert len(line_list) >= 2, f"Invalid file:\n{line}"
         ts = int(line_list[0])
         object_id = int(line_list[1])
         command = line_list[2]
         assert command in ["BB_CREATE", "BB_MOVE", "BB_RESIZE",
-                           "BB_MOVE_AND_RESIZE", "BB_DELETE"], "Invalid file:\n{}".format(line)
+                           "BB_MOVE_AND_RESIZE", "BB_DELETE"], f"Invalid file:\n{line}"
         if command == "BB_CREATE":
-            assert len(line_list) == 9, "Invalid line for BB_CREATE:\n{}".format(line)
+            assert len(line_list) == 9, f"Invalid line for BB_CREATE:\n{line}"
             class_id = int(line_list[3])
             x, y, width, height, confidence = [float(i) for i in line_list[4:]]
             box = np.zeros(1, dtype=EventBbox)
@@ -81,14 +81,15 @@ def bboxstr2array(lines):
             assert object_id in dic_current_boxes
             del dic_current_boxes[object_id]
         else:
-            raise RuntimeError("Wrong key in bbox file: {}".format(command))
+            raise RuntimeError(f"Wrong key in bbox file: {command}")
     if len(dic_current_boxes) != 0:
-        print("Warning: Some boxes were created but not deleted !  Remaining keys: {}".format(dic_current_boxes.keys()))
+        print(f"Warning: Some boxes were created but not deleted !  Remaining keys: {dic_current_boxes.keys()}")
     boxes_array = np.concatenate(list_boxes)
     return boxes_array
 
 
 def parse_args(argv):
+    """Parse command line arguments"""
     parser = argparse.ArgumentParser(description="Convert bbox text format to npy")
     parser.add_argument("-i", dest="input_filename", required=True, help="Input bbox TXT filename")
     parser.add_argument("-o", dest="output_filename", required=True, help="Output npy filename")
@@ -100,12 +101,14 @@ def parse_args(argv):
 
 
 def process_args(args):
+    """Process command line arguments"""
     lines = open(args.input_filename, "r").readlines()
     bboxes_array = bboxstr2array(lines)
     np.save(args.output_filename, bboxes_array)
 
 
 def main():
+    """Main function"""
     args = parse_args(sys.argv[1:])
     process_args(args)
 

@@ -7,12 +7,13 @@
 # on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
+import copy
 import cv2
 import numpy as np
-import copy
 
 
 class LabellingBBoxState:
+    """Bounding box state"""
     TRACKS = (0, 0, 255)
     SET = (0, 255, 0)
     SELECTED = (255, 0, 0)
@@ -20,6 +21,7 @@ class LabellingBBoxState:
 
 
 class LabellingBBoxDrawingState:
+    """Bounding box drawing state"""
     NONE = 0
     BBOX_CREATE = 1
     BBOX_SLIDES = 2
@@ -28,6 +30,7 @@ class LabellingBBoxDrawingState:
 
 
 class BBoxBorder:
+    """Bounding box border"""
     NONE = 0
     TOP_LEFT = 1
     TOP_RIGHT = 2
@@ -40,6 +43,7 @@ class BBoxBorder:
 
 
 class LabellingBBox:
+    """Bounding box"""
     def __init__(self):
         self.x = 0
         self.y = 0
@@ -58,6 +62,7 @@ class LabellingBBox:
         self.hidden = False
 
     def copy(self, dest_bbox):
+        """Copy the bounding box"""
         self.x = dest_bbox.x
         self.y = dest_bbox.y
         self.width = dest_bbox.width
@@ -75,15 +80,18 @@ class LabellingBBox:
         self.hidden = dest_bbox.hidden
 
     def from_tracker_bbox(self, tracker_bbox):
+        """Set the bounding box from the tracker bounding box"""
         self.x = int(tracker_bbox[0])
         self.y = int(tracker_bbox[1])
         self.width = int(tracker_bbox[2])
         self.height = int(tracker_bbox[3])
 
     def print_bbox(self):
+        """Print the bounding box"""
         print("bbox", self.id, self.class_id, "[", self.x, self.y, self.width, self.height, "]", self.end_of_track)
 
     def resize(self, x, y, corner):
+        """Resize the bounding box"""
         if corner == BBoxBorder.BOTTOM_LEFT:
             tr_x = self.x + self.width
             tr_y = self.y
@@ -128,9 +136,11 @@ class LabellingBBox:
             self.width = x - l_x
 
     def to_tracker_bbox(self):
+        """Get the tracker bounding box"""
         return tuple([self.x, self.y, self.width, self.height])
 
     def from_bbox_info(self, bbox_info):
+        """Set the bounding box from the bounding box info"""
         self.from_tracker_bbox(bbox_info["bbox"])
         self.class_id = bbox_info["class_id"]
         if "manually_created" not in bbox_info:
@@ -144,6 +154,7 @@ class LabellingBBox:
             self.end_of_track = bbox_info["end_of_track"]
 
     def to_label_bbox_info(self):
+        """Get the label bounding box info"""
         return {"class_id": self.class_id,
                 "bbox": tuple([self.x,
                                self.y,
@@ -153,23 +164,27 @@ class LabellingBBox:
                 "end_of_track": self.end_of_track}
 
     def is_null(self, min_size):
+        """Check if the bounding box is null"""
         if (self.width * self.width + self.height * self.height) < min_size * min_size:
             return True
         return False
 
     def self_scale(self, zoom):
+        """Scale the bounding box"""
         self.x = int(self.x / float(zoom))
         self.y = int(self.y / float(zoom))
         self.width = int(self.width / float(zoom))
         self.height = int(self.height / float(zoom))
 
     def get_scaled(self, zoom):
+        """Get the scaled bounding box"""
         bbox = copy.deepcopy(self)
         bbox.self_scale(zoom)
         return bbox
 
 
 class FrameLabellingBBoxes:
+    """Frame labelling bounding boxes"""
     def __init__(self):
         self.drawing_state = LabellingBBoxDrawingState.NONE
         self.bbox_selected_idx = -1
@@ -192,6 +207,7 @@ class FrameLabellingBBoxes:
         self.cursor_y = 0
 
     def update_labelling_frame(self, input_frame):
+        """Update the labelling frame"""
         if not self.prev_input_frame.shape[0] == 1:
             self.prev_input_frame = input_frame
         else:
@@ -205,6 +221,7 @@ class FrameLabellingBBoxes:
             interpolation=cv2.INTER_AREA)
 
     def create_tracker_for_new_bboxes(self):
+        """Create tracker for new bounding boxes"""
         for bbox in self.bbox_list:
             if not bbox.tracker:
                 try:
@@ -218,6 +235,7 @@ class FrameLabellingBBoxes:
                     tracker = None
 
     def find_bbox_list_idx_from_bbox_id(self, bbox_id_to_find):
+        """Find the bounding box list index from the bounding box id"""
         list_idx = 0
         for bbox in self.bbox_list:
             if bbox.id == bbox_id_to_find:
@@ -226,11 +244,13 @@ class FrameLabellingBBoxes:
         return -1
 
     def save_current_bboxes(self, bboxes_container, frame_idx):
+        """Save the current bounding boxes"""
         bboxes_container[frame_idx] = {}
         for bbox in self.bbox_list:
             bboxes_container[frame_idx][bbox.id] = bbox.to_label_bbox_info()
 
     def update_bboxes_from_frame(self, bboxes_container, frame_idx):
+        """Update the bounding boxes from the frame"""
 
         if self.bbox_selected_idx >= 0:
             self.unselect_selected()
@@ -301,7 +321,7 @@ class FrameLabellingBBoxes:
             # else: bbox_list doesn't change
 
     def set_bbox_list_from_bboxes_container(self, bboxes_container, frame_idx):
-
+        """Set the bounding box list from the bounding boxes container"""
         # delete current bbox on screen
         for bbox in self.bbox_list:
             del bbox
@@ -329,7 +349,7 @@ class FrameLabellingBBoxes:
             self.reset_selected()
 
     def update_bbox_id_from_keys(self, key, bboxes_container, frame_idx, frame_idx_step):
-
+        """Update the bounding box id from the keys"""
         if self.bbox_selected_idx < 0:
             return
 
@@ -406,7 +426,7 @@ class FrameLabellingBBoxes:
             cv2.destroyWindow("input new id")
 
     def change_bbox_selected_id(self, id, bboxes_container, frame_idx, frame_idx_step):
-
+        """Change the bounding box selected id"""
         # check if object already exists with same id in the current frame
         existing_bbox_idx_with_new_id = self.find_bbox_list_idx_from_bbox_id(id)
         if existing_bbox_idx_with_new_id >= 0:
@@ -444,6 +464,7 @@ class FrameLabellingBBoxes:
         return 1
 
     def change_bbox_selected_class_id(self, id, bboxes_container):
+        """Change the bounding box selected class id"""
         # change all class id for the selected bbox, past and future
         for frame_idx, bboxes in bboxes_container.items():
             if self.bbox_selected.id in bboxes:
@@ -453,6 +474,7 @@ class FrameLabellingBBoxes:
         self.bbox_selected.class_id = id
 
     def delete_all_bbox_with_id_of_selected(self, bboxes_container):
+        """Delete all bounding boxes with id of the selected"""
         if self.bbox_selected_idx >= 0:
             bbox_id_to_del = self.bbox_selected.id
 
@@ -467,6 +489,7 @@ class FrameLabellingBBoxes:
                 self.reset_selected()
 
     def overwrite_all_futur_bbox_with_id_of_selected(self, bboxes_container, frame_idx):
+        """Overwrite all future bounding boxes with id of the selected"""
         if self.bbox_selected_idx >= 0:
             bbox_id_to_del = self.bbox_selected.id
 
@@ -489,6 +512,7 @@ class FrameLabellingBBoxes:
             self.unselect_selected()
 
     def stop_tracking_selected_object(self, bboxes_container, frame_idx, frame_idx_step):
+        """Stop tracking the selected object"""
         if self.bbox_selected_idx >= 0:
             bbox_id_to_update = self.bbox_selected.id
 
@@ -520,6 +544,7 @@ class FrameLabellingBBoxes:
             self.reset_selected()
 
     def left_arrow_pressed(self, ctrl=False):
+        """Left arrow pressed"""
         if self.bbox_selected_idx < 0:
             return
         self.drawing_state = LabellingBBoxDrawingState.BBOX_KEYBOARD
@@ -530,6 +555,7 @@ class FrameLabellingBBoxes:
             self.bbox_selected.width = self.bbox_selected.width - 1
 
     def right_arrow_pressed(self, ctrl=False):
+        """Right arrow pressed"""
         if self.bbox_selected_idx < 0:
             return
         self.drawing_state = LabellingBBoxDrawingState.BBOX_KEYBOARD
@@ -540,6 +566,7 @@ class FrameLabellingBBoxes:
             self.bbox_selected.width = self.bbox_selected.width + 1
 
     def up_arrow_pressed(self, ctrl=False):
+        """Up arrow pressed"""
         if self.bbox_selected_idx < 0:
             return
         self.drawing_state = LabellingBBoxDrawingState.BBOX_KEYBOARD
@@ -550,6 +577,7 @@ class FrameLabellingBBoxes:
             self.bbox_selected.height = self.bbox_selected.height - 1
 
     def down_arrow_pressed(self, ctrl=False):
+        """Down arrow pressed"""
         if self.bbox_selected_idx < 0:
             return
         self.drawing_state = LabellingBBoxDrawingState.BBOX_KEYBOARD
@@ -560,6 +588,7 @@ class FrameLabellingBBoxes:
             self.bbox_selected.height = self.bbox_selected.height + 1
 
     def change_selected(self, revert=False):
+        """Change the selected"""
 
         if self.drawing_state != LabellingBBoxDrawingState.NONE and self.drawing_state != LabellingBBoxDrawingState.BBOX_KEYBOARD:
             return
@@ -595,37 +624,44 @@ class FrameLabellingBBoxes:
             self.init_bbox_edition(self.bbox_selected_idx)
 
     def unselect_selected(self):
+        """Unselect the selected"""
         if self.bbox_selected_idx >= 0:
             self.bbox_selected.copy(self.bbox_save_selected)
             self.reset_selected()
 
     def delete_selected(self):
+        """Delete the selected"""
         if self.bbox_selected_idx >= 0:
             print("deleteting bbox " + str(self.bbox_list[self.bbox_selected_idx].id))
             del self.bbox_list[self.bbox_selected_idx]
             self.reset_selected()
 
     def delete_bbox(self, bbox_idx):
+        """Delete the bounding box"""
         if len(self.bbox_list) > bbox_idx and bbox_idx >= 0:
             print("deleteting bbox " + str(self.bbox_list[bbox_idx].id))
             del self.bbox_list[bbox_idx]
             self.reset_selected()
 
     def delete_bboxes(self, bbox_list_idx):
+        """Delete the bounding boxes"""
         for bbox_idx in sorted(bbox_list_idx, reverse=True):
             self.delete_bbox(bbox_idx)
 
     def reset_selected(self):
+        """Reset the selected"""
         self.bbox_selected = LabellingBBox()
         self.bbox_selected_idx = -1
         self.bbox_save_selected = copy.deepcopy(self.bbox_selected)
 
     def create_new_bbox(self):
+        """Create a new bounding box"""
         self.bbox_selected.id = self.bbox_next_id
         self.bbox_selected.class_id = self.current_class_id
         self.bbox_selected.status = LabellingBBoxState.SELECTED
 
     def add_selected_bbox(self, from_existing=False):
+        """Add the selected bounding box"""
         # if bb has a non null size append it
         if not self.bbox_selected.is_null(self.min_bbox_size):
             # deep copy the bounding box to append it to the list
@@ -645,6 +681,7 @@ class FrameLabellingBBoxes:
                 print("bbox " + str(self.bbox_selected.id) + " loaded")
 
     def approve_selected_bbox(self):
+        """Approve the selected bounding box"""
         if not self.bbox_selected.is_null(self.min_bbox_size):
             self.bbox_selected.status = LabellingBBoxState.SET
             self.bbox_selected.manually_created = True
@@ -658,25 +695,29 @@ class FrameLabellingBBoxes:
             return False
 
     def init_bbox_edition(self, bbox_idx):
+        """Init the bounding box edition"""
         self.bbox_save_selected.copy(self.bbox_list[bbox_idx])
         self.bbox_selected = self.bbox_list[bbox_idx]
         self.bbox_selected.status = LabellingBBoxState.SELECTED
         self.bbox_selected_idx = bbox_idx  # set selected to current bbox
 
     def hide_bboxes(self, state):
+        """Hide the bounding boxes"""
         for bbox in self.bbox_list:
             if bbox.id != self.bbox_selected.id:
                 bbox.hidden = state
 
     def set_cursor(self):
+        """Set the cursor"""
         self.cursor = not self.cursor
 
     def set_cursor_pos(self, x, y):
+        """Set the cursor position"""
         self.cursor_x = x
         self.cursor_y = y
 
     def draw_bboxes_on_frame(self):
-
+        """Draw the bounding boxes on the frame"""
         if self.cursor:
             cv2.line(self.drawing_frame, tuple([0, self.cursor_y]), tuple(
                 [self.drawing_frame.shape[1], self.cursor_y]), (255, 255, 255), 1)
@@ -722,6 +763,7 @@ class FrameLabellingBBoxes:
 
 
 def is_click_in_bbox(bbox, x, y):
+    """Check if the click is in the bounding box"""
     if bbox.hidden:
         return False
 
@@ -733,7 +775,7 @@ def is_click_in_bbox(bbox, x, y):
 
 
 def is_click_on_border(bbox, x, y):
-
+    """Check if the click is on the border"""
     if bbox.hidden:
         return False
 
@@ -766,7 +808,7 @@ def is_click_on_border(bbox, x, y):
 
 
 def get_bbox_idx_from_click(bbox_list, x, y):
-
+    """Get the bounding box index from the click"""
     bbox_idx = 0
     for bbox in bbox_list:
         if is_click_in_bbox(bbox, x, y):
@@ -776,7 +818,7 @@ def get_bbox_idx_from_click(bbox_list, x, y):
 
 
 def correct_bbox(bbox, frame_width, frame_height):
-
+    """Correct the bounding box"""
     if bbox.width < 0:
         bbox.width *= -1
         bbox.x -= bbox.width
@@ -800,11 +842,13 @@ def correct_bbox(bbox, frame_width, frame_height):
 
 
 def update_bbox(bbox, x, y):
+    """Update the bounding box"""
     bbox.width = x - bbox.x
     bbox.height = y - bbox.y
 
 
 def init_move_bbox(bbox, x, y):
+    """Init the move bounding box"""
     if not is_click_in_bbox(bbox, x, y):
         bbox.x_offset = 0
         bbox.y_offset = 0
@@ -817,12 +861,13 @@ def init_move_bbox(bbox, x, y):
 
 
 def move_bbox(bbox, x, y):
+    """Move the bounding box"""
     bbox.x = x + bbox.x_offset
     bbox.y = y + bbox.y_offset
 
 
 def labelling_mouse_cb(event, x, y, flags, frame_labelling_bboxes):
-
+    """Labelling mouse callback"""
     if frame_labelling_bboxes.editing_id:
         return
 

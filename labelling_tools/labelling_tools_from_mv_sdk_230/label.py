@@ -8,8 +8,8 @@
 # See the License for the specific language governing permissions and limitations under the License.
 
 import os
-import numpy
 import warnings
+import numpy
 
 
 def write_bboxes(filename, bboxes, redundant=True, full_protocol=False,
@@ -59,7 +59,7 @@ def write_bboxes(filename, bboxes, redundant=True, full_protocol=False,
                 bbox_to_delete = list(filter(lambda k: k < i, sorted(bbox_buffer.keys())))
                 for ts in bbox_to_delete:
                     for id_ in bbox_buffer[ts]:
-                        file.write("{:010d} {:d} BB_DELETE\n".format(ts, id_))
+                        file.write(f"{ts,:010d} {id_} BB_DELETE\n")
                     bbox_buffer.pop(ts)
             bbox_buffer[int(i + delta_t)] = {}
             for id_obj in bboxes[i]:
@@ -125,13 +125,13 @@ def write_bboxes(filename, bboxes, redundant=True, full_protocol=False,
                 del last_bbox[id_to_delete]
     if not tracked:
         # at the end of the loop we send the last bbdelete
-        for ts in bbox_buffer:
-            for id_ in bbox_buffer[ts]:
-                file.write("{:010d} {:d} BB_DELETE\n".format(ts, id_))
+        for ts, ts_items in bbox_buffer.items():
+            for id_ in ts_items:
+                file.write(f"{ts,:010d} {id_} BB_DELETE\n")
     file.close()
 
 
-def read_bboxes(filename, keep_command_labels=[], timestep_us=5000):
+def read_bboxes(filename, keep_command_labels=None, timestep_us=5000):
     """ This reads a txt file with labeled bboxes and produces
     a dictionary with the information about the bounding boxes:
 
@@ -148,6 +148,8 @@ def read_bboxes(filename, keep_command_labels=[], timestep_us=5000):
      You can optionally specify a list of command labels you would like to keep,
      the dict returned will skip any command labels not in this list.
     """
+    if keep_command_labels is None:
+        keep_command_labels = []
     file = open(filename, "r")
     class_id = 0
     bboxes = {}
@@ -225,6 +227,7 @@ def read_bboxes(filename, keep_command_labels=[], timestep_us=5000):
 
 
 def get_number_of_bboxes(filename):
+    """This function reads a txt file with labeled bboxes and returns the number of bboxes"""
     file = open(filename, "r")
     lines = file.readlines()
     file.close()
