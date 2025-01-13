@@ -5,6 +5,7 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
 import cv2
+import h5py
 import numpy as np
 import torch
 import torchvision
@@ -130,6 +131,35 @@ class YOLODataset(BaseDataset):
         if len_cls == 0:
             LOGGER.warning(f'WARNING ⚠️ No labels found in {cache_path}, training may not work correctly. {HELP_URL}')
         return labels
+
+    def get_events_labels(self):
+        self.label_files = [x.rsplit('.', 1)[0] + '_bbox.npy' for x in self.im_files]
+        all_labels = []
+        for file_idx in range(len(self.im_files)):
+            with h5py.File(self.im_files[file_idx], "r") as h5_file:
+                num_frames, _, height, width = h5_file["data"].shape
+            labels = np.load(self.label_files[file_idx])
+            x_normalized, y_normalized, w_normalized, h_normalized = labels['x'] / width, labels['y'] / height, labels['w'] / width, labels['h'] / height
+            x_centered_normalized = x_normalized + w_normalized / 2
+            y_centered_normalized = y_normalized + h_normalized / 2
+            bboxes_normalized = np.stack((x_centered_normalized, y_centered_normalized, w_normalized, h_normalized), axis=1)
+            classes = labels["class_id"]
+            timestamps = labels['ts']
+            for frame_idx in range(num_frames):
+                box_idxs = np.nonzero(timestamps == (frame_idx+1) * 1e5)[0]
+                if len(box_idxs) > 0:
+                    all_labels.append(
+                        dict(
+                            im_file=[file_idx, frame_idx],
+                            shape=(height, width),
+                            cls=classes[box_idxs, np.newaxis],  # n, 1
+                            bboxes=bboxes_normalized[box_idxs, :],  # n, 4
+                            segments=[],
+                            keypoints=None,
+                            normalized=True,
+                            bbox_format='xywh'))
+        return all_labels
+
 
     def build_transforms(self, hyp=None):
         """Builds and appends transforms to the list."""

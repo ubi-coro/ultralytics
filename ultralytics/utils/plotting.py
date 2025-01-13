@@ -17,6 +17,9 @@ from ultralytics.utils import LOGGER, TryExcept, ops, plt_settings, threaded
 from .checks import check_font, check_version, is_ascii
 from .files import increment_path
 
+BG_COLOR = np.array([30, 37, 52], dtype=np.uint8)
+POS_COLOR = np.array([216, 223, 236], dtype=np.uint8)
+NEG_COLOR = np.array([64, 126, 201], dtype=np.uint8)
 
 class Colors:
     """
@@ -362,6 +365,24 @@ def save_one_box(xyxy, im, file=Path('im.jpg'), gain=1.02, pad=10, square=False,
     return crop
 
 
+def viz_histo_binarized(im):
+    """
+    Visualize binarized histogram of events
+
+    Args:
+        im (np.ndarray): Array of shape (2,H,W)
+
+    Returns:
+        output_array (np.ndarray): Array of shape (H,W,3)
+    """
+    img = np.full(im.shape[-2:] + (3,), BG_COLOR, dtype=np.uint8)
+    y, x = np.where(im[0] > 0)
+    img[y, x, :] = POS_COLOR
+    y, x = np.where(im[1] > 0)
+    img[y, x, :] = NEG_COLOR
+    return img
+
+
 @threaded
 def plot_images(images,
                 batch_idx,
@@ -401,7 +422,7 @@ def plot_images(images,
         if i == max_subplots:  # if last batch has fewer images than we expect
             break
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
-        im = im.transpose(1, 2, 0)
+        im = viz_histo_binarized(im.copy())
         mosaic[y:y + h, x:x + w, :] = im
 
     # Resize (optional)
