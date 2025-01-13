@@ -1,0 +1,10 @@
+path: YOUR_DATASET_PATH  # dataset root dir
+train: train  # train images (relative to 'path') 128 images
+val: val  # val images (relative to 'path') 128 images
+test:  # test images (optional)
+
+# Classes
+names:
+0: xxx
+1: yyy
+2: zzz

@@ -18,42 +18,25 @@ The modification of the source code mainly targets these two issues.
 Download the source code of [yolov8](https://github.com/ultralytics/ultralytics) by:
 
 ```bash
-git clone https://github.com/ultralytics/ultralytics.git
+git clone git@github.com:ubi-coro/ultralytics.git
 ```
-
-Checkout this commit:
-
-```bash
-git checkout eb976f5ad20d7779e82f733af4ebe592beaa89b5
-```
-
-We will start modifying the code from this commit.
 
 ## Prepare the Events Dataset for Object Detection
 
-1. Make sure Metavision SDK is [properly installed](https://docs.prophesee.ai/stable/installation/index.html#chapter-installation).
-2. Make some recordings with an event camera (for example with [Metavision Studio](https://docs.prophesee.ai/stable/metavision_studio/index.html#chapter-metavision-studio)). The events are stored in [RAW files](https://docs.prophesee.ai/stable/data/file_formats/raw.html#chapter-data-file-formats-raw).
-3. Convert the RAW event files into HDF5 tensor files made of event histograms using [Generate HDF5 sample](https://docs.prophesee.ai/stable/samples/modules/ml/generate_hdf5.html#chapter-samples-ml-generate-hdf5). Those files have the extension `.h5`.
-4. Generate labels for each event histogram. Each label should contain at least the information of timestamp, position of the bounding box of the object and the object class ID. Timestamp is used to associate the label with the event histogram. The labels should be saved in a `numpy` array with a customized structured data type: `dtype=[('ts', '<u8'), ('x', '<f4'), ('y', '<f4'), ('w', '<f4'), ('h', '<f4'), ('class_id', 'u1')]`. The unit of the timestamp(`ts`) is us. The location of the bounding box(`x, y, w, h`) is in pixel unit, without normalization. For example, a label `[500000, 127., 165., 117., 156., 0]` means it corresponds to the `50th` event histogram if the event histogram is generated with a time interval of `10ms`. There is an object, which corresponds to class `0`, in the scene. The top-left anchor of the bounding box to frame the object is `[165., 127.]` and the height and width of the box is `156.` and `117.`, respectively. The labels corresponding to the event histograms in a `xxx.h5` file should be saved in a `xxx_bbox.npy` file, namely changing the suffix from `.h5` to `_bbox.npy`. And the `xxx.h5` file and `xxx_bbox.npy` file should be placed in the same folder. We provide a [labelling tool](https://support.prophesee.ai/portal/en/kb/articles/test-machine-learning-labeling-tool) to facilitate the process. You can get access to it if you are a Prophesee customer by [creating your Knowledge Center account](https://www.prophesee.ai/resources-access-request/).
-Group your event histogram and label files into `train`, `val`, `test` folders.
-
-## Apply the Modifications to the Source Code
-
-First, download the patch file here:
-
-[Download the patch file](https://docs.prophesee.ai/stable/_downloads/91126a9186e1fd71d01c181798c3256f/yolov8_updates_for_eb_data.patch).
-
-Then navigate to the root directory of the source code of [yolov8](https://github.com/ultralytics/ultralytics) in a terminal, execute the following command to apply the changes:
-
-```bash
-git apply PATH_TO_PATCH_FILE/yolov8_updates_for_eb_data.patch
-```
-
-[The explanations of the modifications.](patch_explanation.md)
+1. Make sure **Metavision SDK** is [properly installed](https://docs.prophesee.ai/stable/installation/index.html#chapter-installation).
+2. **Make some recordings** with an event camera (for example with [Metavision Studio](https://docs.prophesee.ai/stable/metavision_studio/index.html#chapter-metavision-studio)). The events are stored in [RAW files](https://docs.prophesee.ai/stable/data/file_formats/raw.html#chapter-data-file-formats-raw).
+3. Convert the **RAW event files into HDF5 tensor files** made of event histograms using [Generate HDF5 sample](https://docs.prophesee.ai/stable/samples/modules/ml/generate_hdf5.html#chapter-samples-ml-generate-hdf5). Those files have the extension `.h5`.
+4. **Generate labels** for each event histogram.
+   - Each label should contain at least the information of timestamp, position of the bounding box of the object and the object class ID.
+   - *Timestamp* is used to associate the label with the event histogram. The unit of the timestamp(`ts`) is µs.
+   - The *labels* should be saved in a `numpy` array with a customized structured data type: `dtype=[('ts', '<u8'), ('x', '<f4'), ('y', '<f4'), ('w', '<f4'), ('h', '<f4'), ('class_id', 'u1')]`. The location of the bounding box(`x, y, w, h`) is in pixel unit, without normalization. *(For example, a label `[500000, 127., 165., 117., 156., 0]` means it corresponds to the `50th` event histogram if the event histogram is generated with a time interval of `10ms`. There is an object, which corresponds to class `0`, in the scene. The top-left anchor of the bounding box to frame the object is `[165., 127.]` and the height and width of the box is `156.` and `117.`, respectively.)*
+   - The labels corresponding to the event histograms in a `xxx.h5` file should be saved in a `xxx_bbox.npy` file, namely changing the suffix from `.h5` to `_bbox.npy`. And the `xxx.h5` file and `xxx_bbox.npy` file should be placed in the same folder.
+   - We provide a [labelling tool](https://support.prophesee.ai/portal/en/kb/articles/test-machine-learning-labeling-tool) to facilitate the process. You can get access to it if you are a Prophesee customer by [creating your Knowledge Center account](https://www.prophesee.ai/resources-access-request/).
+5. **Group** your event histogram and label files into `train`, `val`, `test` folders.
 
 ## Prepare Your Python Environment
 
-We need a python environment that fulfills the [requirements](https://github.com/ultralytics/ultralytics/blob/main/requirements.txt) listed by yolov8. Once you download the source code, the `requirements.txt` can be found in the root directory. To install (it is recommended to do it in a virtual environment):
+We need a python environment that fulfills the [requirements](https://github.com/ultralytics/ultralytics/blob/main/requirements.txt) listed by yolov8. Once you download the source code, the `requirements.txt` can be found in the root directory. To install *(it is recommended to do it in a virtual environment)*:
 
 ```bash
 pip install -r requirements.txt
