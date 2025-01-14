@@ -1,14 +1,14 @@
-# Machine Learning Labeling Tool
+# Machine Learning Labelling Tool
 
 Source: [Prophesee](https://support.prophesee.ai/portal/en/kb/articles/test-machine-learning-labeling-tool)
 
 ## Background
 
-To assist the data labeling process, we provide a manual annotating tool to draw bounding boxes on  `.avi` video or `.jpg` image sequences. In this article, we will explain the functionalities of this tool and how to use it in practice.
+To assist the data labelling process, we provide a manual annotating tool to draw bounding boxes on  `.avi` video or `.jpg` image sequences. In this article, we will explain the functionalities of this tool and how to use it in practice.
 
 <figure>
   <img src="src/Annotation_example.png" />
-  <figcaption>Illustration of the labeling process. The bbox in editing is shown in blue, with the first number indicating the object id, the second number indicating the class category. The added or edited bbox is shown in green.</figcaption>
+  <figcaption>Illustration of the labelling process. The bbox in editing is shown in blue, with the first number indicating the object id, the second number indicating the class category. The added or edited bbox is shown in green.</figcaption>
 </figure>
 
 ## Introduction
@@ -16,7 +16,7 @@ To assist the data labeling process, we provide a manual annotating tool to draw
 This tool allows you to draw bounding boxes around objects to be detected. Each object is identified by two numbers: `object id` and `class id`. 
 
 - **object id**: the id of the object. Each individual object (each car, pedestrian etc.) should have an unique id number. 
-- **class id**: the category number of the object. Before starting your labeling process, you should first define the number of categories. And provide a unique number to each category, like
+- **class id**: the category number of the object. Before starting your labelling process, you should first define the number of categories. And provide a unique number to each category, like
     ```yaml
     {
       "0": "pedestrian",
@@ -31,11 +31,11 @@ If your input is an `.avi` video, you can label the whole video frame-by-frame. 
 If your input is a collection of sequential `.jpg` images, you can label each image in a sequential way. *You only need to pass the 1st image as input, the tool will automatically grab all following images.*
 
 > [!NOTE]
-> If you have only Event-Based recordings at hand, you can use [File to Video Application](https://docs.prophesee.ai/stable/samples/modules/core/file_to_video.html) of Metavision to convert the RAW data to AVI video.
+> If you have only event-based recordings at hand, you can use [File to Video Application](https://docs.prophesee.ai/stable/samples/modules/core/file_to_video.html) of Metavision to convert the RAW data to AVI video.
 
 The output contains two files:
 
-- an intermediate `.txt` file: a log file which records all the manual labeling actions on the bounding boxes, such as addition, deletion, resizing etc. 
+- an intermediate `.txt` file: a log file which records all the manual labelling actions on the bounding boxes, such as addition, deletion, resizing etc. 
 - a `.npy` file: the standard bbox format used in Metavision ML module, as explained in [this page](https://docs.prophesee.ai/stable/samples/modules/ml/bbox_txt2npy.html). 
 
 ## QuickStart
@@ -47,7 +47,12 @@ Start by downloading the appropriate version of the labbeling tool depending of 
 up to 2.2.2 | `labelling_tools_up_to_mv_sdk_222.zip`
 from 2.3.0 | `labelling_tools_from_mv_sdk_230.zip`
 
-### To launch the first labeling exercise: 
+```bash
+conda install opencv
+conda install -c conda-forge opencv
+```
+
+### To launch the first labelling exercise: 
 
 ```bash
 python3 label_tracking.py -i <path to input> -f <fps of the video>

@@ -1,4 +1,4 @@
-# Train and Test Event-based Yolo Detection Model
+# Train and Test Event-based YOLO Detection Model
 
 [ultralytics](https://github.com/ultralytics/ultralytics) | [PROPHESEE](https://docs.prophesee.ai/stable/tutorials/other/train_and_test_event_based_yolo_detection_model.html)
 
@@ -15,7 +15,7 @@ In this tutorial, we use yolov8 as an example to show how to train and evaluate 
 
 The modification of the source code mainly targets these two issues.
 
-## Prepare the Source Code of Yolov8
+## Prepare the Source Code of YOLOv8
 
 Download the source code of [yolov8](https://github.com/ultralytics/ultralytics) by:
 

@@ -237,7 +237,7 @@ def main(args):
     if args.label_file != "":
         assert os.path.exists(args.label_file), "Could not open input label file: {}. ".format(args.label_file)
 
-        # reading labeling file
+        # reading labelling file
         bboxes_container = label.read_bboxes(args.label_file, [], timestep_us)
 
         # changing output name if input and output are the same
