@@ -1,6 +1,6 @@
 # Train and Test Event-based YOLO Detection Model
 
-[ultralytics](https://github.com/ultralytics/ultralytics) | [PROPHESEE](https://docs.prophesee.ai/stable/tutorials/other/train_and_test_event_based_yolo_detection_model.html)
+[![ultralytics](https://img.shields.io/badge/ultralytics-0180A3)](https://github.com/ultralytics/ultralytics) [![PROPHESEE](https://img.shields.io/badge/PROPHESEE-0180A3)](https://docs.prophesee.ai/stable/tutorials/other/train_and_test_event_based_yolo_detection_model.html)
 
 Read the [Ultralytics Documentation](https://docs.ultralytics.com/).
 
